@@ -5,3 +5,4 @@ dev.db-journal
 *.log
 .DS_Store
 .env
+.trae-html-share-packages/
