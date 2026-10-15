@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { musicApi } from '@/api/music';
 import { proxyImage } from '@/api/client';
+import { demoMode } from '@/api/mode';
 import { extractColors } from '@/utils/color';
 import { EQ_FREQS, EQ_PRESETS } from '@/utils/eq';
 import { songKey, type LyricLine, type Song } from '@/types';
@@ -233,9 +234,10 @@ export const usePlayerStore = defineStore('player', {
             sourceId: r.sourceId,
             label: song.sources.find((s) => s.source === r.source)?.label ?? r.source,
           };
-          // 音频经服务端代理获得 CORS（供 Web Audio 频谱），失败由 onError 回退直链
-          a.src = `/api/music/proxy/audio?url=${encodeURIComponent(r.url)}`;
-          (a as any)._directUrl = r.url;
+          // 音频经服务端代理获得 CORS（供 Web Audio 频谱）；演示模式/代理失败时回退直链
+          const directUrl = r.url;
+          a.src = demoMode.value ? directUrl : `/api/music/proxy/audio?url=${encodeURIComponent(directUrl)}`;
+          (a as any)._directUrl = directUrl;
           if (autoplay) await a.play().catch(() => {});
           this.loading = false;
           this._failStreak = 0;
