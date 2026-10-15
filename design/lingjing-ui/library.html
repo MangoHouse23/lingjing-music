@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>音乐库 · 聆境</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  /* 音乐库页私有样式 */
+  .lib-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
+  .tab-pane{display:none}
+  .tab-pane.show{display:block;animation:row-in .4s var(--ease) both}
+  .pane-note{font-size:12.5px;color:var(--sub);margin:0 4px 10px}
+  .steps{display:flex;align-items:center;gap:0;margin:18px 0 20px}
+  .step{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--faint)}
+  .step.done{color:var(--primary)}
+  .step-line{flex:1;height:1.5px;background:var(--line);margin:0 10px;min-width:26px}
+  .step-line.done{background:var(--primary)}
+  .match-list{border-top:1px solid var(--line);margin-top:4px;display:none}
+  .match-list.show{display:block;animation:row-in .4s var(--ease) both}
+  .match-head{font-size:12.5px;color:var(--sub);padding:12px 4px 2px}
+  .match-ok{color:var(--primary);margin-left:auto;display:flex;font-size:16px}
+  .modal-ops{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+</style>
+</head>
+<body data-page="library">
+<div class="app">
+  <main class="app-content">
+
+    <!-- 页头 -->
+    <div class="pg-head lib-head">
+      <div>
+        <div class="pg-kicker">MY LIBRARY · 音乐库</div>
+        <h1 class="pg-title">音乐库</h1>
+        <p class="pg-sub">128 首喜欢 · 234 条最近播放 · 12 首已下载 · 8 张歌单</p>
+      </div>
+      <button class="btn btn-ghost" id="btnImportTop"><i data-icon="download-cloud"></i>导入外部歌单</button>
+    </div>
+
+    <!-- tabs -->
+    <div class="tab-line" id="libTabs">
+      <button class="active">我喜欢<span class="cnt">128</span></button>
+      <button>最近播放<span class="cnt">234</span></button>
+      <button>已下载<span class="cnt">12</span></button>
+    </div>
+
+    <!-- 面板 -->
+    <div class="tab-pane show" data-pane="0"><div class="song-list" id="listLiked"></div></div>
+    <div class="tab-pane" data-pane="1">
+      <p class="pane-note">最近 7 天 · 按时间倒序</p>
+      <div class="song-list" id="listRecent"></div>
+    </div>
+    <div class="tab-pane" data-pane="2">
+      <div class="song-list" id="listDownloaded"></div>
+      <div class="empty"><i data-icon="folder"></i>更多内容会在播放时自动缓存，无需手动操作</div>
+    </div>
+
+    <!-- 我的歌单 -->
+    <div class="sec-head">
+      <h2>我的歌单<small>MY PLAYLISTS</small></h2>
+      <div style="display:flex;gap:8px">
+        <button class="btn-icon" data-toast="新建歌单（演示）" aria-label="新建歌单"><i data-icon="plus"></i></button>
+        <button class="btn btn-ghost" id="btnImport"><i data-icon="download-cloud"></i>导入歌单</button>
+      </div>
+    </div>
+    <div class="pl-grid" id="myGrid"></div>
+
+  </main>
+</div>
+
+<!-- 导入向导 Modal -->
+<div class="modal-mask" id="importMask">
+  <div class="modal">
+    <h3>导入外部歌单
+      <button class="btn-icon" id="btnModalClose" aria-label="关闭"><i data-icon="x"></i></button>
+    </h3>
+    <p class="m-desc">粘贴网易云 / QQ音乐 / 酷狗歌单分享链接，将自动在 5 个音源中逐首匹配聚合。</p>
+
+    <div class="steps">
+      <span class="step done"><span class="step-dot done"><i data-icon="check"></i></span>粘贴链接</span>
+      <span class="step-line done"></span>
+      <span class="step done" id="stepMatch"><span class="step-dot" id="dotMatch">2</span>匹配音源</span>
+      <span class="step-line" id="lineMatch"></span>
+      <span class="step" id="stepDone"><span class="step-dot" id="dotDone">3</span>完成导入</span>
+    </div>
+
+    <input class="input" id="importInput" type="url"
+           placeholder="粘贴歌单分享链接，如 https://music.163.com/playlist?id=…">
+    <div style="display:flex;gap:10px;margin-top:14px">
+      <button class="btn btn-primary" id="btnMatch"><i data-icon="download-cloud"></i>解析链接</button>
+    </div>
+
+    <div class="match-list" id="matchList">
+      <div class="match-head">匹配结果 · 3 首成功 / 1 首待确认</div>
+      <div id="matchRows"></div>
+    </div>
+
+    <div class="modal-ops">
+      <button class="btn btn-ghost" id="btnCancel">取消</button>
+      <button class="btn btn-primary" id="btnConfirm" style="display:none"><i data-icon="check"></i>完成导入</button>
+    </div>
+  </div>
+</div>
+
+<script src="mock.js"></script>
+<script src="app.js"></script>
+<script>
+(function(){
+  const $ = (s) => document.querySelector(s);
+
+  /* ---------- 三个面板列表 ---------- */
+  $('#listLiked').innerHTML = DB.liked.map((id, i) => App.songRow(App.songById(id), i)).join('');
+  $('#listRecent').innerHTML = DB.recent.map((id, i) => App.songRow(App.songById(id), i)).join('');
+  $('#listDownloaded').innerHTML = DB.downloaded.map((id, i) => App.songRow(App.songById(id), i)).join('');
+
+  /* ---------- 我的歌单 ---------- */
+  $('#myGrid').innerHTML = DB.playlists.map((p) => App.plCard(p)).join('');
+
+  /* ---------- Tabs 切换 ---------- */
+  const panes = [...document.querySelectorAll('.tab-pane')];
+  App.tabs($('#libTabs'), (i) => {
+    panes.forEach((p, j) => {
+      p.classList.toggle('show', i === j);
+      if (i === j){ p.style.animation = 'none'; void p.offsetWidth; p.style.animation = ''; }
+    });
+  });
+
+  /* ---------- 导入向导 ---------- */
+  const mask = $('#importMask');
+  const openModal = () => mask.classList.add('open');
+  const closeModal = () => mask.classList.remove('open');
+  $('#btnImport').addEventListener('click', openModal);
+  $('#btnImportTop').addEventListener('click', openModal);
+  $('#btnModalClose').addEventListener('click', closeModal);
+  $('#btnCancel').addEventListener('click', closeModal);
+  mask.addEventListener('click', (e) => { if (e.target === mask) closeModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+  if (new URLSearchParams(location.search).get('import') === '1') openModal();
+
+  /* 匹配结果渲染 */
+  $('#matchRows').innerHTML =
+    DB.importDemo.ok.map((m) =>
+      `<div class="match-row">
+         <img src="${App.cover(m.cover)}" alt="">
+         <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+           <b style="font-weight:600">${m.title}</b>
+           <span style="color:var(--sub);font-size:12.5px"> · ${m.artist}</span>
+         </span>
+         <span class="src-badge ok">网易云</span><span class="src-badge ok">GD音乐台</span>
+         <span class="match-ok"><i data-icon="check"></i></span>
+       </div>`
+    ).join('') +
+    DB.importDemo.pending.map((m) =>
+      `<div class="match-row">
+         <img src="${App.cover(m.cover)}" alt="">
+         <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+           <b style="font-weight:600">${m.title}</b>
+           <span style="color:var(--sub);font-size:12.5px"> · ${m.artist}</span>
+         </span>
+         <span class="match-warn"><i data-icon="alert-circle"></i>待确认 · 未找到匹配，导入后自动换源重试</span>
+       </div>`
+    ).join('');
+
+  const btnMatch = $('#btnMatch');
+  btnMatch.addEventListener('click', () => {
+    if (!$('#importInput').value.trim()){ App.toast('请先粘贴歌单链接'); $('#importInput').focus(); return; }
+    btnMatch.disabled = true;
+    btnMatch.innerHTML = '<i data-icon="clock-3"></i>匹配中…';
+    App.mountIcons(btnMatch);
+    setTimeout(() => {
+      $('#matchList').classList.add('show');
+      $('#dotMatch').classList.add('done'); $('#dotMatch').textContent = ''; $('#dotMatch').innerHTML = '<i data-icon="check"></i>';
+      $('#lineMatch').classList.add('done');
+      $('#dotDone').textContent = '';
+      btnMatch.style.display = 'none';
+      $('#btnConfirm').style.display = '';
+      App.mountIcons(document.body);
+    }, 600);
+  });
+
+  $('#btnConfirm').addEventListener('click', () => {
+    App.toast('已导入 3 首，1 首待确认（演示）');
+    closeModal();
+    /* 重置向导状态 */
+    setTimeout(() => {
+      btnMatch.disabled = false;
+      btnMatch.style.display = '';
+      btnMatch.innerHTML = '<i data-icon="download-cloud"></i>解析链接';
+      $('#matchList').classList.remove('show');
+      $('#btnConfirm').style.display = 'none';
+      $('#dotMatch').innerHTML = ''; $('#dotMatch').textContent = '2'; $('#dotMatch').classList.remove('done');
+      $('#lineMatch').classList.remove('done');
+      $('#dotDone').textContent = '3';
+      $('#importInput').value = '';
+      App.mountIcons(document.body);
+    }, 350);
+  });
+
+  /* toast 委托 */
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest('[data-toast]');
+    if (t){ e.preventDefault(); App.toast(t.dataset.toast); }
+  });
+
+  App.mountIcons(document.body);
+})();
+</script>
+</body>
+</html>

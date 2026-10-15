@@ -1,0 +1,25 @@
+/* 聆境设计系统 · Design Tokens（与 UI 设计稿一致） */
+:root{
+  /* color */
+  --bg:#FAFAF7; --surface:#FFFFFF; --wash:#F3F3EE;
+  --ink:#1A1D1F; --sub:#8A8F98; --faint:#B8BCC2;
+  --primary:#5B8A72; --primary-hover:#4A7561; --primary-soft:#EEF3EF;
+  --accent:#E8A87C; --accent-soft:#FBF1E8;
+  --line:#ECECE7;
+  --danger:#C96A5B;
+  /* dark (player) */
+  --dk-bg:#101214; --dk-surface:#181B1E; --dk-ink:#F2F3F0; --dk-sub:#9BA1A6;
+  /* type */
+  --f-display:Palatino,Georgia,"Songti SC","Noto Serif SC",serif;
+  --f-body:-apple-system,"PingFang SC","HarmonyOS Sans SC","MiSans","Noto Sans SC",sans-serif;
+  /* shape */
+  --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:20px;
+  --sh-sm:0 1px 2px rgba(26,29,31,.04);
+  --sh-md:0 8px 32px rgba(26,29,31,.06);
+  --sh-lg:0 16px 48px rgba(26,29,31,.10);
+  /* motion */
+  --ease:cubic-bezier(.22,1,.36,1);
+  /* layout */
+  --sidebar-w:236px;
+  --mini-h:64px;
+}

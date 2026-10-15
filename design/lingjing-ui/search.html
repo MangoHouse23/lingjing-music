@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>搜索 · 聆境</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  /* 搜索页私有样式 */
+  .search-wrap{margin:6px 0 34px}
+  .src-note{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:26px 0 14px;font-size:13px;color:var(--sub)}
+  .src-note .time{color:var(--faint);font-variant-numeric:tabular-nums}
+  .tips-card{padding:20px 22px}
+  .tips-title{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:650;margin-bottom:14px}
+  .tips-title i[data-icon]{font-size:16px;color:var(--primary)}
+  .tip{display:flex;gap:10px;font-size:13px;color:var(--sub);line-height:1.7;padding:5px 0}
+  .tip i[data-icon]{font-size:15px;color:var(--primary);margin-top:5px;flex:none}
+  .block-card{padding:22px 24px}
+  .mini-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .mini-head b{display:flex;align-items:center;gap:8px;font-size:14.5px;font-weight:650}
+  .mini-head b i[data-icon]{font-size:16px;color:var(--primary)}
+  .mini-head small{font-size:12px;color:var(--faint)}
+  .mini-head .clear-btn{display:flex;align-items:center;gap:3px;font-size:12px;color:var(--faint);padding:4px 8px;border-radius:8px;transition:all .2s}
+  .mini-head .clear-btn:hover{color:var(--ink);background:var(--wash)}
+  .cols{display:grid;grid-template-columns:1.25fr .75fr;gap:28px;align-items:start}
+  @media (max-width:900px){
+    .cols{grid-template-columns:1fr;gap:18px}
+    .pg-title{font-size:24px}
+  }
+</style>
+</head>
+<body data-page="search">
+<div class="app">
+  <main class="app-content">
+
+    <!-- 页头 -->
+    <div class="pg-head">
+      <div class="pg-kicker">SEARCH · 聚合搜索</div>
+      <h1 class="pg-title">一个框，搜全网</h1>
+      <p class="pg-sub">网易云 · 酷狗 · 酷我 · B站 · GD音乐台 五源并发检索，同名歌曲自动合并，失效自动换源</p>
+    </div>
+
+    <!-- 搜索框 -->
+    <div class="search-wrap">
+      <div class="search-box" id="searchBox">
+        <i data-icon="search"></i>
+        <input id="searchInput" type="text" placeholder="试试搜索：海雾来信" autocomplete="off">
+        <button class="search-clear" id="btnClear" aria-label="清空"><i data-icon="x"></i></button>
+      </div>
+    </div>
+
+    <!-- 默认态：历史 + 热搜 -->
+    <section id="paneDefault">
+      <div class="cols">
+        <div class="card block-card">
+          <div class="mini-head">
+            <b><i data-icon="trending-up"></i>热搜榜<small style="margin-left:2px">每小时更新</small></b>
+          </div>
+          <div class="hot-grid" id="hotList"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <div class="card block-card">
+            <div class="mini-head">
+              <b><i data-icon="history"></i>搜索历史</b>
+              <button class="clear-btn" id="btnClearHis"><i data-icon="x"></i>清空</button>
+            </div>
+            <div class="history-chips" id="hisChips"></div>
+          </div>
+          <div class="card tips-card">
+            <div class="tips-title"><i data-icon="sparkles"></i>搜索小贴士</div>
+            <div class="tip"><i data-icon="check"></i><span>用「歌手 + 歌名」可以提高跨音源匹配率</span></div>
+            <div class="tip"><i data-icon="check"></i><span>粘贴分享链接可直达歌单导入向导</span></div>
+            <div class="tip"><i data-icon="check"></i><span>灰色歌曲会自动在其余音源中寻找替代</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 结果态 -->
+    <section id="paneResult" style="display:none">
+      <div class="src-note">
+        <span>为你找到 <b style="color:var(--ink)">7</b> 首相关歌曲 · 5 个音源并发完成 · 同名歌曲已自动合并</span>
+        <span class="time">耗时 0.42s</span>
+      </div>
+      <div class="chips" id="srcChips" style="margin-bottom:18px">
+        <button class="chip active" data-src="全部">全部<span class="cnt">7</span></button>
+        <button class="chip" data-src="网易云">网易云<span class="cnt">4</span></button>
+        <button class="chip" data-src="酷狗">酷狗<span class="cnt">3</span></button>
+        <button class="chip" data-src="酷我">酷我<span class="cnt">6</span></button>
+        <button class="chip" data-src="B站">B站<span class="cnt">4</span></button>
+        <button class="chip" data-src="GD音乐台">GD音乐台<span class="cnt">5</span></button>
+      </div>
+      <div class="song-list" id="resultList"></div>
+      <div class="empty" style="padding:40px 0 10px">
+        没有找到？换个关键词试试，或到<a href="library.html?import=1" style="color:var(--primary)"> 导入向导 </a>粘贴歌单链接
+      </div>
+    </section>
+
+  </main>
+</div>
+<script src="mock.js"></script>
+<script src="app.js"></script>
+<script>
+(function(){
+  const $ = (s) => document.querySelector(s);
+  const input = $('#searchInput');
+  const box = $('#searchBox');
+  const paneDefault = $('#paneDefault');
+  const paneResult = $('#paneResult');
+
+  /* 默认态渲染 */
+  $('#hotList').innerHTML = DB.hotSearch.map((h, i) =>
+    `<div class="hot-item" data-term="${h.term}">
+       <span class="hot-no">${String(i + 1).padStart(2, '0')}</span>
+       <span class="hot-term">${h.term}${h.tag ? `<span class="tag">${h.tag}</span>` : ''}</span>
+       <span class="hot-hot">${h.heat} 次搜索</span>
+     </div>`
+  ).join('');
+  const renderHis = () => {
+    $('#hisChips').innerHTML = DB.searchHistory.map((t) =>
+      `<button class="hchip" data-term="${t}">${t}</button>`
+    ).join('') || '<span style="font-size:13px;color:var(--faint)">暂无搜索历史</span>';
+  };
+  renderHis();
+
+  /* 状态切换 */
+  function showResult(term){
+    box.classList.add('has-val');
+    input.value = term;
+    paneDefault.style.display = 'none';
+    paneResult.style.display = '';
+    paneResult.style.animation = 'row-in .4s var(--ease) both';
+    $('#resultList').innerHTML = DB.searchResult.map((id, i) =>
+      App.songRow(App.songById(id), i)
+    ).join('');
+    App.mountIcons($('#resultList'));
+  }
+  function showDefault(){
+    box.classList.remove('has-val');
+    input.value = '';
+    paneResult.style.display = 'none';
+    paneDefault.style.display = '';
+  }
+
+  input.addEventListener('input', () => {
+    box.classList.toggle('has-val', !!input.value);
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && input.value.trim()){
+      showResult(input.value.trim());
+      App.toast(`聚合搜索「${input.value.trim()}」完成`);
+    }
+  });
+  $('#btnClear').addEventListener('click', () => { showDefault(); input.focus(); });
+  $('#btnClearHis').addEventListener('click', () => {
+    DB.searchHistory.length = 0; renderHis(); App.toast('搜索历史已清空');
+  });
+
+  /* 词回填 */
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest('[data-term]');
+    if (t){ showResult(t.dataset.term); App.toast(`聚合搜索「${t.dataset.term}」完成`); }
+  });
+
+  /* 源筛选 chips */
+  $('#srcChips').addEventListener('click', (e) => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    $('#srcChips').querySelectorAll('.chip').forEach((c) => c.classList.remove('active'));
+    chip.classList.add('active');
+    App.toast(`演示：按「${chip.dataset.src}」筛选`);
+  });
+
+  App.mountIcons(document.body);
+})();
+</script>
+</body>
+</html>

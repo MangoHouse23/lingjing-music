@@ -1,0 +1,71 @@
+// 聆境 Lingjing 数据模型（SQLite）
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Playlist {
+  id        Int             @id @default(autoincrement())
+  name      String
+  desc      String?
+  cover     String?
+  tint      String?
+  source    String?
+  sourceId  String?
+  createdAt DateTime        @default(now())
+  tracks    PlaylistTrack[]
+}
+
+model PlaylistTrack {
+  id         Int      @id @default(autoincrement())
+  playlistId Int
+  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  songKey    String
+  title      String
+  artist     String
+  album      String?
+  duration   Int      @default(0)
+  cover      String?
+  source     String
+  sourceId   String
+  quality    String?
+  position   Int      @default(0)
+  addedAt    DateTime @default(now())
+
+  @@unique([playlistId, songKey])
+}
+
+model LikedSong {
+  key      String   @id
+  title    String
+  artist   String
+  album    String?
+  duration Int      @default(0)
+  cover    String?
+  source   String
+  sourceId String
+  quality  String?
+  addedAt  DateTime @default(now())
+}
+
+model PlayHistory {
+  id       Int      @id @default(autoincrement())
+  key      String
+  title    String
+  artist   String
+  album    String?
+  duration Int      @default(0)
+  cover    String?
+  source   String
+  sourceId String
+  playedAt DateTime @default(now())
+}
+
+model Setting {
+  key   String @id
+  value String
+}

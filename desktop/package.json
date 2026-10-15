@@ -1,0 +1,13 @@
+{
+  "name": "lingjing-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "聆境 Lingjing · Electron 桌面壳（桌面歌词 / 快捷键 / MediaSession）",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^31.3.0"
+  }
+}

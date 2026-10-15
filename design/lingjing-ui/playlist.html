@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>歌单 · 聆境</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  /* 歌单详情页私有样式 */
+  .pl-hero{
+    position:relative;overflow:hidden;border-radius:var(--r-xl);
+    display:flex;gap:32px;align-items:flex-end;
+    padding:40px;margin-bottom:30px;color:#fff;
+  }
+  .pl-hero::before{ /* 取色氛围光斑 */
+    content:"";position:absolute;width:340px;height:340px;border-radius:50%;
+    right:-80px;top:-120px;filter:blur(70px);background:rgba(255,255,255,.16);
+  }
+  .pl-hero::after{
+    content:"";position:absolute;width:260px;height:260px;border-radius:50%;
+    left:32%;bottom:-140px;filter:blur(64px);background:rgba(255,255,255,.09);
+  }
+  .pl-hero-cover{
+    width:200px;height:200px;border-radius:var(--r-xl);overflow:hidden;flex:none;
+    box-shadow:0 20px 56px rgba(0,0,0,.4);transform:rotate(-2deg);
+    transition:transform .4s var(--ease);position:relative;z-index:1;
+  }
+  .pl-hero:hover .pl-hero-cover{transform:rotate(0) scale(1.02)}
+  .pl-hero-cover img{width:100%;height:100%;object-fit:cover}
+  .pl-hero-info{position:relative;z-index:1;min-width:0;padding-bottom:4px}
+  .pl-hero-info .pg-kicker{color:rgba(255,255,255,.72)}
+  .pl-hero-name{
+    font-family:var(--f-display);font-size:34px;font-weight:600;line-height:1.25;
+    margin:6px 0 8px;
+  }
+  .pl-hero-meta{font-size:13px;color:rgba(255,255,255,.82)}
+  .pl-hero-intro{font-size:13px;color:rgba(255,255,255,.66);margin-top:8px;max-width:520px}
+  .pl-hero-ops{display:flex;align-items:center;gap:12px;margin-top:22px;flex-wrap:wrap}
+  .pl-hero .btn-primary{background:#fff;color:var(--ink);box-shadow:0 8px 24px rgba(0,0,0,.26)}
+  .pl-hero .btn-primary:hover{background:rgba(255,255,255,.92)}
+  .pl-hero .btn-ghost{
+    background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);
+    color:#fff;backdrop-filter:blur(8px);
+  }
+  .pl-hero .btn-ghost:hover{background:rgba(255,255,255,.24);color:#fff}
+  .pl-hero .btn-icon{color:rgba(255,255,255,.85)}
+  .pl-hero .btn-icon:hover{background:rgba(255,255,255,.16);color:#fff}
+  .pl-note{font-size:12px;color:var(--faint);margin-top:6px}
+  @media (max-width:900px){
+    .pl-hero{flex-direction:column;align-items:flex-start;gap:20px;padding:26px 22px}
+    .pl-hero-cover{width:132px;height:132px}
+    .pl-hero-name{font-size:26px}
+  }
+</style>
+</head>
+<body data-page="playlist" data-playlist="p2">
+<script>/* 在 shell 注入前确定歌单，保证侧栏高亮正确 */
+  document.body.dataset.playlist = new URLSearchParams(location.search).get('id') || 'p2';
+</script>
+<div class="app">
+  <main class="app-content">
+
+    <!-- 歌单 Hero -->
+    <section class="pl-hero" id="plHero">
+      <div class="pl-hero-cover"><img id="plCover" alt="歌单封面"></div>
+      <div class="pl-hero-info">
+        <div class="pg-kicker">歌单 · PLAYLIST</div>
+        <h1 class="pl-hero-name" id="plName"></h1>
+        <div class="pl-hero-meta" id="plMeta"></div>
+        <p class="pl-hero-intro" id="plIntro"></p>
+        <div class="pl-hero-ops">
+          <a class="btn btn-primary" href="player.html"><i data-icon="play"></i>播放全部</a>
+          <button class="btn btn-ghost" data-toast="随机播放中（演示）"><i data-icon="shuffle"></i>随机播放</button>
+          <button class="btn-icon" data-toast="已加入下载队列（演示）" aria-label="下载歌单"><i data-icon="download-cloud"></i></button>
+          <button class="btn-icon" data-toast="更多操作（演示）" aria-label="更多"><i data-icon="more-horizontal"></i></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 筛选 -->
+    <div class="src-note" style="margin:0 0 14px">
+      <div class="chips" id="sortChips">
+        <button class="chip active">全部 12</button>
+        <button class="chip">无损 10</button>
+        <button class="chip">已下载 2</button>
+      </div>
+      <span class="time" style="font-size:12px;color:var(--faint)">已下载 5 首 · 可离线播放</span>
+    </div>
+
+    <!-- 曲目 -->
+    <div class="song-list" id="trackList"></div>
+    <p class="pl-note" style="text-align:center;margin-top:22px">
+      当前展示前 12 首 · 完整歌单将在正式版中分页加载
+    </p>
+
+  </main>
+</div>
+<script src="mock.js"></script>
+<script src="app.js"></script>
+<script>
+(function(){
+  const $ = (s) => document.querySelector(s);
+
+  /* 歌单数据（与 body[data-playlist] 一致；同时支持我的歌单与编辑精选） */
+  const id = document.body.dataset.playlist;
+  const pl = DB.playlists.find((p) => p.id === id)
+    || DB.recPlaylists.find((p) => p.id === id)
+    || DB.playlists.find((p) => p.id === 'p2');
+  const intros = {
+    p1: '红心积累的一切，按下随机，都是回忆。',
+    p2: '适合深夜与文字独处的低音量歌单，每 20 首更新一次。',
+    p3: '降噪优先，节奏稳定，地铁里的三十八分钟。',
+    p4: '夏天的尾巴一直没抓到，就用歌单留住它。',
+    p5: '雨声、钢琴和木吉他，书房的正确打开方式。',
+    p6: '从南山到北方小城，民谣巡游不停站。',
+    p7: '低音给足，旋律克制，适合漫游与发呆。',
+    p8: '拿铁与拿铁之间，总有一首在排队。',
+  };
+
+  /* Hero 渲染 */
+  $('#plHero').style.background = `linear-gradient(150deg, rgba(16,18,20,.28), rgba(16,18,20,.55)), ${pl.tint}`;
+  $('#plCover').src = App.cover(pl.cover);
+  $('#plName').textContent = pl.name;
+  $('#plMeta').textContent = `创建者 ${pl.curator} · ${pl.count} 首 · 约 1 小时 47 分 · 已从「网易云」导入并聚合 5 源`;
+  $('#plIntro').textContent = intros[pl.id] || '一个安静的聚合歌单。';
+
+  /* 曲目渲染 */
+  $('#trackList').innerHTML = DB.songs.slice(0, 12).map((s, i) => App.songRow(s, i)).join('');
+
+  /* 筛选 chips */
+  $('#sortChips').addEventListener('click', (e) => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    $('#sortChips').querySelectorAll('.chip').forEach((c) => c.classList.remove('active'));
+    chip.classList.add('active');
+  });
+
+  /* toast 委托 */
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest('[data-toast]');
+    if (t){ e.preventDefault(); App.toast(t.dataset.toast); }
+  });
+
+  App.mountIcons(document.body);
+})();
+</script>
+</body>
+</html>
