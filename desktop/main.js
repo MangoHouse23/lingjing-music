@@ -68,7 +68,8 @@ ipcMain.on('lyric:update', (_e, data) => {
 });
 ipcMain.on('lyric:toggle', () => toggleLyric());
 
-app.setPath('userData', path.join(app.getPath('appData'), 'lingjing'));
+// 用户数据放在项目内，避免写入系统目录（也便于整体迁移/清理）
+app.setPath('userData', path.resolve(__dirname, '..', '.electron-data'));
 
 app.whenReady().then(() => {
   createMainWindow();

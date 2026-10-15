@@ -7,3 +7,4 @@ dev.db-journal
 .env
 .trae-html-share-packages/
 .trae-html-share-packages/
+.electron-data/
